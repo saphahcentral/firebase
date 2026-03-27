@@ -34,46 +34,91 @@
         <input type="text" id="command-input" autofocus>
     </div>
 
-    <script>
-        const input = document.getElementById('command-input');
-        const output = document.getElementById('output');
-        const subs = {{ site.data.subscribers | jsonify }};
+<script>
+    const input = document.getElementById('command-input');
+    const output = document.getElementById('output');
+    
+    // 1. Fetch the ARRAY of admin emails from Jekyll's _data/auth.json
+    const AUTHORIZED_LIST = {{ site.data.auth.admins | jsonify }};
+    
+    // 2. Fetch the database (Works for either 'tickets' or 'subscribers')
+    const dataItems = {{ site.data.tickets | default: site.data.subscribers | jsonify }};
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const cmd = input.value.trim().toLowerCase();
-                handleCommand(cmd);
-                input.value = '';
-            }
-        });
+    /**
+     * GATEKEEPER: Identity Verification
+     * To be triggered by Google OAuth login next week.
+     */
+    function verifyAccess(userEmail) {
+        if (AUTHORIZED_LIST.includes(userEmail)) {
+            bootSystem(userEmail);
+        } else {
+            // LOCKOUT SEQUENCE
+            output.innerHTML = "CRITICAL ERROR: UNAUTHORIZED ACCESS ATTEMPT.";
+            output.innerHTML += `\nUSER [${userEmail}] IS NOT IN THE ADMIN_LIST.`;
+            output.style.color = "#ff3333"; // Red Alert
+            input.disabled = true;
+        }
+    }
 
-        function handleCommand(cmd) {
-            printLine(`\n> ${cmd}`);
+    /**
+     * INITIALIZE: System Boot
+     */
+    function bootSystem(user) {
+        printLine(`IDENTITY VERIFIED: ${user}`);
+        printLine("SESSION ESTABLISHED. ACCESS GRANTED.");
+        printLine("--------------------------------------");
+        printLine("SYSTEM READY. TYPE 'HELP' FOR COMMANDS.");
+        input.disabled = false;
+        input.focus();
+    }
 
-            if (cmd === 'help') {
-                printLine("COMMANDS: \n- LS: List subscribers\n- STATS: Show confirmation metrics\n- CLEAR: Wipe screen");
-            } else if (cmd === 'ls') {
-                printLine("NAME | EMAIL | SEQ | CONFIRMED");
-                printLine("--------------------------------------");
-                subs.forEach(s => {
-                    const status = s.confirmed ? "[YES]" : "[NO]";
-                    printLine(`${s.name.padEnd(15)} | ${s.email} | ${s.sequence_index} | ${status}`);
-                });
-            } else if (cmd === 'stats') {
-                const confirmedCount = subs.filter(s => s.confirmed).length;
-                const unsubbed = subs.filter(s => s.unsubscribed).length;
-                printLine(`TOTAL: ${subs.length}\nCONFIRMED: ${confirmedCount}\nUNSUBSCRIBED: ${unsubbed}`);
-            } else if (cmd === 'clear') {
-                output.innerHTML = 'CONSOLE REBOOTED.';
+    /**
+     * LOGIC: Command Processor
+     */
+    function handleCommand(cmd) {
+        printLine(`\nSCSS6027_ROOT > ${cmd}`);
+
+        if (cmd === 'help') {
+            printLine("AVAILABLE COMMANDS:");
+            printLine("- LS: List all database records");
+            printLine("- CLEAR: Wipe terminal screen");
+            printLine("- HELP: Show this manual");
+        } else if (cmd === 'ls') {
+            printLine("FETCHING RECORDS FROM DATABASE...");
+            if (!dataItems || dataItems.length === 0) {
+                printLine("DATABASE_EMPTY: NO RECORDS FOUND.");
             } else {
-                printLine("ERROR: UNKNOWN COMMAND.");
+                printLine("ID/NAME | DETAILS | STATUS");
+                printLine("--------------------------------------");
+                dataItems.forEach((item, index) => {
+                    // Logic handles both Ticket format and Subscriber format
+                    const name = item.Name || item.name;
+                    const detail = item.EmailAddress || item.email;
+                    const status = item.Status || (item.confirmed ? 'Confirmed' : 'Pending');
+                    printLine(`[${index}] ${name} | ${detail} | ${status}`);
+                });
             }
-            output.scrollTop = output.scrollHeight;
+        } else if (cmd === 'clear') {
+            output.innerHTML = 'SYSTEM REBOOT COMPLETE.';
+        } else {
+            printLine(`ERROR: COMMAND '${cmd}' NOT RECOGNIZED.`);
         }
+        
+        // Auto-scroll to bottom
+        output.scrollTop = output.scrollHeight;
+    }
 
-        function printLine(text) {
-            output.innerHTML += `\n${text}`;
+    // Event Listener for Enter Key
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const cmd = input.value.trim().toLowerCase();
+            if (cmd) handleCommand(cmd);
+            input.value = '';
         }
-    </script>
+    });
+
+    // TEMPORARY FOR TESTING (Delete this line next week once OAuth is live)
+    // verifyAccess("primary-admin@gmail.com"); 
+</script>
 </body>
 </html>
