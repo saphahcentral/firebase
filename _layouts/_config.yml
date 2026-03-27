@@ -1,0 +1,26 @@
+# [ SAPHAH CENTRAL SYSTEM CONFIGURATION ]
+title: SAPHAH_CENTRAL_SUBSCRIBER_SERVICE
+email: saphahcentralservices@gmail.com
+description: >-
+  Independent replacement for Firebase Subscriber Backend. 
+  Operational console for email sequence management.
+
+# Build Settings
+markdown: kramdown
+highlighter: rouge
+theme: none # Disables default themes to use our custom Terminal layout
+
+# Navigation & URL
+baseurl: "" # Required for GitHub Pages / Web Editor logic
+url: ""
+
+# Exclusion Logic (Keeps the system clean)
+exclude:
+  - README.md
+  - .gitignore
+  - iteration_logs/
+  - node_modules/
+
+# Data Settings
+# This ensures Jekyll processes your _data folder as the primary "database"
+data_dir: _data
